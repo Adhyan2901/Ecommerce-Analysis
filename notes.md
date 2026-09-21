@@ -182,3 +182,36 @@
    proactive notifications or compensation. Hypothesis; not tested.
 4. Limitations: association not causation (late orders may also have other
    problems); only customers who left a review are counted.
+
+   ## Q7: Payment methods (sql/07_payment_methods.sql)
+
+**Rules**
+- Delivered orders, Jan 2017 - Aug 2018; amounts in R$.
+- Payments aggregated to one row per order before joining (some orders
+  have several payment rows).
+- main_method = payment type with the largest amount in the order; orders
+  paid with several methods are counted once, under that method.
+- Order value = sum of payment_value for the order.
+
+**Key numbers**
+- 96,211 orders; total paid R$15.38M (matches item revenue in Q4, R$15.37M,
+  within 0.02%).
+- Share of orders / value: credit card 75.5% / 78.5%, boleto 19.9% / 18.0%,
+  voucher 3.1% / 2.2%, debit card 1.5% / 1.4%.
+- Avg (median) order value: credit card R$166 (R$109), boleto R$144 (R$94),
+  voucher R$115 (R$81), debit card R$140 (R$90).
+- Credit card orders are ~15% larger than boleto on average, ~17% on median.
+- Averages are 41-57% above medians in every method (a few large orders).
+- 49.7% of voucher-led orders used another method, vs 1.0% for card-led
+  orders; ~2,200 orders (~2.3%) mixed methods (estimated from rounded
+  percentages).
+
+**Findings**
+1. Credit card and boleto make up 95.4% of orders.
+2. Card orders are larger than boleto orders. Consistent with installments
+   enabling bigger baskets (tested in Q8), but it could also reflect who
+   chooses each method.
+3. Use the median (R$94-109) for a typical order; averages are skewed.
+4. Vouchers are small and mostly used alongside another method.
+5. Limitation: main_method is assigned by the largest payment, so voucher
+   use inside card-led orders is not visible in the method mix.
