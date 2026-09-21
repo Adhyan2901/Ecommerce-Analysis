@@ -88,3 +88,30 @@
    (BA, PE, ES) to reduce supply risk.
 4. Limitation: state = seller location; tiny-state percentages rest on
    small bases.
+
+   ## Q4: Customer concentration (sql/04_customer_concentration.sql)
+
+**Rules**
+- Delivered orders, Jan 2017 - Aug 2018; revenue = price + freight (R$).
+- Customer = customer_unique_id. 93,104 customers in the window.
+- NTILE(5) on total spend; quintile 1 = top 20% of spenders.
+
+**Key numbers**
+- Top 20% of customers = 53.5% of revenue (R$8.23M of R$15.37M);
+  top 40% = 73.5%; bottom 40% = 13.3%.
+- Avg spend: top quintile R$442 vs bottom quintile R$40 (~11x).
+- Cutoff to enter the top 20%: ~R$208 total spend.
+- Avg orders per customer: 1.10 (top quintile) down to 1.00 (bottom).
+- Largest single customer: R$13,664.
+- Check: quintile revenue sums to R$15.37M, matching Q1 and Q2.
+
+**Findings**
+1. Revenue is concentrated but not 80/20: top 20% of customers = ~54%.
+2. Top customers are mostly one-time big-basket buyers (1.10 orders), not
+   loyal repeat buyers, so "VIP" here means high first-order value.
+3. Recommendation: target high-value first-time buyers with a retention
+   offer (post-purchase email, second-order incentive). Illustration only:
+   if 5% of top-quintile customers bought once more at their average
+   spend, that adds ~R$411K, about 2.7% of window revenue.
+4. Limitation: spend is measured over a 20-month window with little
+   repeat buying, so this measures order size more than customer loyalty.
