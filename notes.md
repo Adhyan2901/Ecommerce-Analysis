@@ -286,3 +286,31 @@
 7. Limitations: snapshot status; no reasons given; a cancellation is not
    necessarily a lost sale. Canceled + unavailable = ~1.2% of orders,
    roughly R$190K at the R$160 average (estimate).
+
+   ## Q10: Cumulative revenue (sql/10_cumulative_revenue.sql)
+
+**Rules**
+- Delivered orders, Jan 2017 - Aug 2018; revenue = price + freight (R$).
+- Same monthly base as Q1. Running total via SUM() OVER (ORDER BY month).
+- 3-month rolling average uses ROWS BETWEEN 2 PRECEDING AND CURRENT ROW,
+  NULL for the first two months.
+
+**Key numbers**
+- Total: R$15,373,120 (matches Q4 quintile total within R$1).
+- Cumulative: Dec 2017 R$6.92M (45.0%), Jan 2018 R$8.00M (52.0%), so half
+  of revenue had arrived by month 13 of 20.
+- Rolling 3-month average peaked in May 2018 (R$1,127,417) and fell to
+  R$1,008,426 by Aug 2018 (about -10.6%).
+- Jan-Aug 2018 R$8.45M vs Jan-Aug 2017 R$3.47M = +143% (same 8 months).
+- Growth vs same month in 2017: May +99%, Jun +107%, Jul +82%, Aug +53%
+  (calculated from the monthly revenue column).
+- No 2018 month exceeded Nov 2017 (R$1.153M).
+
+**Findings**
+1. Revenue more than doubled year over year, but month-to-month growth
+   stopped after Jan 2018 and year-over-year growth is slowing.
+2. The rolling average smooths out single-month noise and shows a gentle
+   decline from May 2018.
+3. Fits the acquisition-dependence hypothesis from Q1, Q4, and Q5 (only 3%
+   of customers repeat), but the data cannot show the cause of the slowdown.
+4. Limitation: the decline covers three months; Jan 2017 is a tiny base.
