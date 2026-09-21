@@ -215,3 +215,37 @@
 4. Vouchers are small and mostly used alongside another method.
 5. Limitation: main_method is assigned by the largest payment, so voucher
    use inside card-led orders is not visible in the method mix.
+
+   ## Q8: Installments vs order value (sql/08_installments.sql)
+
+**Rules**
+- Delivered orders, Jan 2017 - Aug 2018; credit-card-only orders (no
+  voucher/boleto mixed in); installments = installments of the largest
+  card payment in the order.
+- Order value = item price + freight (from order_items), not amount paid.
+- Payments and items each aggregated to one row per order before joining.
+
+**Key numbers**
+- 71,918 card-only orders (701 fewer than Q7's card-led 72,619; matches the
+  ~1% of card-led orders that also used another method).
+- Orders by bucket: paid in full 32.2%, 2-3 installments 30.3%, 4-6 21.5%,
+  7-9 8.7%, 10+ 7.4%.
+- Avg (median) order value: R$100 (71) -> R$135 (112) -> R$182 (128) ->
+  R$268 (181) -> R$409 (236). Average up ~4.1x, median ~3.3x.
+- ~68% of card orders use 2+ installments.
+- 7+ installments: ~16% of card orders, ~32% of card value (calculated from
+  rounded averages).
+- Avg paid vs item total: gap 0.0-0.1% in every bucket, so no visible
+  installment interest in this data.
+- Check: implied card revenue ~R$11.9M = ~98.8% of Q7 card total (R$12.06M).
+
+**Findings**
+1. Order value rises steadily with installments; the 10+ bucket has ~4x the
+   average order value of paid-in-full orders.
+2. Long installments (7+) are a small share of orders but about a third of
+   card value.
+3. Averages are skewed, most in the 10+ bucket (avg 73% above median).
+4. Recommendation: test longer installment options on higher-priced items
+   with a randomized experiment. Hypothesis; direction of cause unknown.
+5. Limitations: association not causation; order value is not basket size;
+   card orders only; no data on interest, defaults, or who bears risk.
