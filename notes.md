@@ -115,3 +115,40 @@
    spend, that adds ~R$411K, about 2.7% of window revenue.
 4. Limitation: spend is measured over a 20-month window with little
    repeat buying, so this measures order size more than customer loyalty.
+
+   ## Q5: Repeat purchase
+
+**Rules**
+- Delivered orders, Jan 2017 - Aug 2018.
+- Customer = customer_unique_id (customer_id changes with every order).
+
+**Q5a: orders per customer (sql/05a_repeat_rate.sql)**
+- 93,104 customers: 90,315 ordered once (97.00%), 2,562 twice (2.75%),
+  227 three or more times (0.24%).
+- Repeat customers = 2,789 (3.00%), placing 5,896 orders (6.1% of all
+  orders), so about 2.1 orders each.
+- Check: 93,104 customers matches Q4; 96,211 orders matches the sum of Q1.
+- Caveat: 3.00% counts any second order within the 20-month window, so
+  customers who first bought late had less time to return.
+
+**Q5b: timing of the second order (sql/05b_days_to_second_order.sql)**
+- 93,104 customers, 2,789 repeat (3.00%); matches Q5a.
+- 90-day repeat rate (first order before 2018-06-03): 2.28%. Not comparable
+  with 3.00%, which counts any second order in the whole window.
+- 29.7% of repeaters (~830) ordered again on the same day as their first
+  order. This may be a split basket rather than a return visit (not
+  verifiable from the data).
+- 50.5% of repeaters ordered again within 30 days; median gap is 29 days
+  (includes same-day repeats).
+
+**Findings**
+1. Repeat buying is rare (3.0% ever, 2.3% within 90 days) and happens early:
+   half of repeaters return within a month.
+2. About 30% of repeats are same-day, so the true return-visit rate is nearer
+   2% (estimate: 2,789 - ~830 = ~1,960 customers, ~2.1%).
+3. Together with Q1 (revenue flat through 2018) and Q4 (top customers are
+   mostly one-time buyers), this suggests growth depends on acquiring new
+   customers.
+4. Recommendation: test a retention nudge (email or voucher) in the first
+   30 days after delivery. This is a hypothesis; the data can't show whether
+   a nudge would change behavior.
