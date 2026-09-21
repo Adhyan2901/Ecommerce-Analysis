@@ -37,3 +37,28 @@
    Black Friday effect, but not yet confirmed (needs a daily-orders check).
 2. Growth flattened in 2018. Hypothesis: with only ~3% repeat buyers, growth
    depends on new customers. Test this in the RFM and cohort analysis.
+
+   ## Q2: Top 10 categories by revenue (sql/02_top_categories.sql)
+
+**Rules**
+- Delivered orders, Jan 2017 - Aug 2018; revenue = price + freight (R$).
+- Category names come from the English translation table; if there is no
+  translation, the Portuguese name is used (LEFT JOIN + COALESCE).
+- An order with items from several categories counts once in each, so
+  order counts do not add up to total orders.
+
+**Key numbers**
+- health_beauty is #1: R$1.41M (9.2% of revenue).
+- Top 5 categories = 39.3% of revenue; top 10 = 62.4%.
+- bed_bath_table has the most orders (9,267) but ~R$132 per order;
+  watches_gifts has 5,491 orders but ~R$230 per order.
+- Check: top-10 total implies ~R$15.4M overall, matching the sum of Q1.
+
+**Findings**
+1. Revenue is diversified: no category is above 10%.
+2. Category rank by orders differs from rank by revenue because order
+   value varies a lot (R$132 to R$230).
+3. To test in RFM/cohorts: which first-purchase categories lead to
+   repeat buying?
+
+   
