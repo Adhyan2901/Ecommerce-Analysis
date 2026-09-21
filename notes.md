@@ -249,3 +249,40 @@
    with a randomized experiment. Hypothesis; direction of cause unknown.
 5. Limitations: association not causation; order value is not basket size;
    card orders only; no data on interest, defaults, or who bears risk.
+
+   ## Q9: Cancellations and unavailable orders (sql/09_cancellations.sql)
+
+**Rules**
+- ALL order statuses, purchase date Jan 2017 - Aug 2018; denominator = all
+  orders in the month. Status is a snapshot at extraction.
+- in_progress = shipped, invoiced, processing, created, approved.
+- ROLLUP adds a TOTAL row.
+
+**Key numbers**
+- 99,092 orders: delivered 96,211 (97.1%), canceled 580 (0.59%),
+  unavailable 602 (0.61%), in progress 1,699 (1.71%).
+- Checks: delivered matches Q5a/Q7; monthly delivered matches Q1; 349
+  orders fall outside the window (2016, Sep/Oct 2018).
+- Canceled rate: 0.59% (2017) vs 0.58% (Jan-Aug 2018). Spikes: Feb 2018
+  (73, 1.09%), Aug 2018 (84, 1.29%) = ~27% of all cancellations.
+- Unavailable rate: 1.01% (2017) vs 0.27% (2018); <=0.29% every month since
+  Mar 2018. Peak Feb 2017 (2.53%).
+- Nov 2017: 84 unavailable (highest count) but rate 1.11%, in line with
+  other months; canceled 0.49%.
+- 951 in-progress orders are from 2017 (56% of all in-progress), 9+ months
+  old at the end of the data.
+- Year figures are sums of the monthly rows.
+
+**Findings**
+1. ~97% of orders reach delivered status; failed or unfinished orders are
+   2.9%, and in-progress (1.71%) is the largest part.
+2. Cancellations are steady (~0.6%) apart from spikes in Feb and Aug 2018.
+3. Unavailable orders fell sharply from 2017 to 2018 (cause unknown).
+4. The Nov 2017 peak did not raise failure rates.
+5. Many in-progress orders are 9+ months old, so they are probably stuck or
+   never updated, not in transit.
+6. Recommendation: investigate Feb and Aug 2018 cancellations by seller and
+   category, and audit long-running shipped/processing orders.
+7. Limitations: snapshot status; no reasons given; a cancellation is not
+   necessarily a lost sale. Canceled + unavailable = ~1.2% of orders,
+   roughly R$190K at the R$160 average (estimate).
