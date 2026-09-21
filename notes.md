@@ -61,4 +61,30 @@
 3. To test in RFM/cohorts: which first-purchase categories lead to
    repeat buying?
 
-   
+   ## Q3: Top 3 sellers per state (sql/03_top_sellers_by_state.sql)
+
+**Rules**
+- Delivered orders, Jan 2017 - Aug 2018; revenue = price + freight (R$).
+- State = seller location, not customer location.
+- RANK() OVER (PARTITION BY seller_state ORDER BY revenue DESC), filtered in
+  an outer query because window functions can't be filtered where computed.
+- States with <3 rows have <3 sellers with delivered sales in the window.
+
+**Key numbers**
+- 56 rows across 22 seller states.
+- SP top 3 sellers: R$231K-247K each, only ~2.3-2.5% of SP revenue each.
+- Top-seller share: PR 5.5%, MG 11.0%, RJ 14.6%, but BA 77.7%, PB 80.2%,
+  PE 62.6%, ES 56.4%.
+- MA, PI, PA, AM have one active seller each (100% share, tiny revenue).
+- BA top seller: R$230.8K from 348 orders (~R$663/order vs ~R$160 marketplace
+  average).
+
+**Findings**
+1. Seller concentration falls as state size rises: SP is diversified, while
+   BA, PE, PB, and ES depend on one seller for more than half of revenue.
+2. A single BA seller earns about as much as SP's best, on ~4x the average
+   order value (likely high-ticket products; not verified).
+3. Recommendation: recruit backup sellers in mid-sized dependent states
+   (BA, PE, ES) to reduce supply risk.
+4. Limitation: state = seller location; tiny-state percentages rest on
+   small bases.
