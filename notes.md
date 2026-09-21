@@ -152,3 +152,33 @@
 4. Recommendation: test a retention nudge (email or voucher) in the first
    30 days after delivery. This is a hypothesis; the data can't show whether
    a nudge would change behavior.
+
+   ## Q6: Delivery delay vs review score (sql/06_delivery_delay_vs_reviews.sql)
+
+**Rules**
+- Delivered orders, Jan 2017 - Aug 2018, with a delivery date and a review.
+- One review per order (latest, via ROW_NUMBER), because 547 orders have
+  more than one review.
+- delay_days = delivered date - estimated date (negative = early).
+- 95,560 orders analyzed = 99.3% of 96,211 delivered orders; 651 dropped
+  (no review or no delivery date).
+
+**Key numbers**
+- 92.0% of orders arrive before the estimate; 6.7% (6,378) arrive late.
+- Avg score: early 8+ days 4.32 | early 1-7 4.20 | on date 4.03 |
+  late 1-3 days 3.29 | late 4-7 days 2.10 | late 8+ days 1.70.
+- 1-2 star share: 9.0% (early 8+) rising to 79.3% (late 8+).
+- Early/on-time avg ~4.29 vs late avg ~2.27 (weighted by orders; calculated
+  from the rounded bucket values).
+- Late orders are 6.7% of orders but ~a third of 1-2 star reviews (~32%,
+  estimated from rounded percentages).
+
+**Findings**
+1. Late delivery is strongly associated with low scores. The drop is
+   sharpest once the estimate is missed and continues as delay grows.
+2. Most orders (92%) arrive early, so the late minority does
+   disproportionate damage to ratings.
+3. Recommendation: prioritize orders at risk of being 4+ days late with
+   proactive notifications or compensation. Hypothesis; not tested.
+4. Limitations: association not causation (late orders may also have other
+   problems); only customers who left a review are counted.
