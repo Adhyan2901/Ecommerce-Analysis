@@ -12,6 +12,7 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def generate_sql(question: str, max_retries: int = 3) -> str:
     """Send a business question to Gemini and get back a SQL query.
+    Returns None if the question isn't answerable from this database.
     Retries automatically if the model is temporarily overloaded (503)."""
     prompt = f"{SCHEMA_CONTEXT}\n\nQ: \"{question}\"\nA:\n"
 
@@ -23,12 +24,16 @@ def generate_sql(question: str, max_retries: int = 3) -> str:
             )
             sql = response.text.strip()
             sql = re.sub(r"^```sql\s*|\s*```$", "", sql, flags=re.MULTILINE).strip()
+
+            if sql == "NOT_ANSWERABLE":
+                return None
+
             return sql
 
-        except errors.ServerError as e:
+        except errors.ServerError:
             if attempt == max_retries:
                 raise
-            wait = 2 ** attempt  # 2s, 4s, 8s
+            wait = 2 ** attempt
             print(f"  (model busy, retrying in {wait}s... attempt {attempt}/{max_retries})")
             time.sleep(wait)
 
