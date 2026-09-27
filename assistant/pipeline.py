@@ -2,15 +2,17 @@ import pandas as pd
 from query_generator import generate_sql
 from db_executor import run_query
 from sql_safety import UnsafeSQLError
+from charting import make_chart
 
 
 class PipelineResult:
     """Holds everything about one question, so the UI can show all of it."""
-    def __init__(self, question, sql=None, data=None, error=None):
+    def __init__(self, question, sql=None, data=None, error=None, chart=None):
         self.question = question
         self.sql = sql
         self.data = data
         self.error = error
+        self.chart = chart
 
     @property
     def success(self):
@@ -18,9 +20,7 @@ class PipelineResult:
 
 
 def ask(question: str) -> PipelineResult:
-    """Full pipeline: question -> SQL -> validated -> executed -> DataFrame.
-    Never raises; errors are captured in the result so the UI can display
-    them gracefully instead of crashing."""
+    """Full pipeline: question -> SQL -> validated -> executed -> chart."""
 
     # Step 1: generate SQL
     try:
@@ -37,7 +37,7 @@ def ask(question: str) -> PipelineResult:
                   "categories, or customers instead."
         )
 
-    # Step 2 + 3: validate and execute (validation happens inside run_query)
+    # Step 2 + 3: validate and execute
     try:
         data = run_query(sql)
     except UnsafeSQLError as e:
@@ -45,14 +45,16 @@ def ask(question: str) -> PipelineResult:
     except Exception as e:
         return PipelineResult(question, sql=sql, error=f"Query failed to run: {e}")
 
-    return PipelineResult(question, sql=sql, data=data)
+    # Step 4: chart
+    chart = make_chart(data, question)
+    return PipelineResult(question, sql=sql, data=data, chart=chart)
 
 
 if __name__ == "__main__":
     test_questions = [
         "What is total revenue by month?",
         "How many orders were canceled?",
-        "What is the capital of France?",  # off-topic, should fail gracefully
+        "What is the capital of France?",
     ]
 
     for q in test_questions:
@@ -66,6 +68,7 @@ if __name__ == "__main__":
             print(f"\nSQL:\n{result.sql}")
             print(f"\nResult ({len(result.data)} rows):")
             print(result.data.head(10))
+            print(f"Chart: {'created' if result.chart else 'none'}")
         else:
             print(f"\nFailed: {result.error}")
             if result.sql:
