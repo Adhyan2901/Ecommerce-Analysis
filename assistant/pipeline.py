@@ -3,16 +3,18 @@ from query_generator import generate_sql
 from db_executor import run_query
 from sql_safety import UnsafeSQLError
 from charting import make_chart
+from insight_generator import generate_insight
 
 
 class PipelineResult:
     """Holds everything about one question, so the UI can show all of it."""
-    def __init__(self, question, sql=None, data=None, error=None, chart=None):
+    def __init__(self, question, sql=None, data=None, error=None, chart=None, insight=None):
         self.question = question
         self.sql = sql
         self.data = data
         self.error = error
         self.chart = chart
+        self.insight = insight
 
     @property
     def success(self):
@@ -20,7 +22,7 @@ class PipelineResult:
 
 
 def ask(question: str) -> PipelineResult:
-    """Full pipeline: question -> SQL -> validated -> executed -> chart."""
+    """Full pipeline: question -> SQL -> validated -> executed -> chart -> insight."""
 
     # Step 1: generate SQL
     try:
@@ -47,7 +49,11 @@ def ask(question: str) -> PipelineResult:
 
     # Step 4: chart
     chart = make_chart(data, question)
-    return PipelineResult(question, sql=sql, data=data, chart=chart)
+
+    # Step 5: insight
+    insight = generate_insight(question, data)
+
+    return PipelineResult(question, sql=sql, data=data, chart=chart, insight=insight)
 
 
 if __name__ == "__main__":
@@ -69,6 +75,7 @@ if __name__ == "__main__":
             print(f"\nResult ({len(result.data)} rows):")
             print(result.data.head(10))
             print(f"Chart: {'created' if result.chart else 'none'}")
+            print(f"\nInsight: {result.insight}")
         else:
             print(f"\nFailed: {result.error}")
             if result.sql:
