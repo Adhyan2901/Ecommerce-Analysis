@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use("Agg")  # draw charts in memory, no desktop window (needed for web apps)
 import matplotlib.pyplot as plt
 import pandas as pd
 
