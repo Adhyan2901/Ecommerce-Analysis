@@ -61,6 +61,9 @@ sellers
 6. Category names: prefer product_category_name_english from the
    translation table; fall back to the Portuguese name if no translation
    exists (LEFT JOIN + COALESCE).
+7. PostgreSQL's ROUND(value, decimals) requires a numeric type, not
+   double precision. When rounding a SUM() or AVG() of price/freight
+   columns, cast to numeric first, e.g. ROUND(AVG(x)::numeric, 2).
 
 ## Example questions and correct queries
 

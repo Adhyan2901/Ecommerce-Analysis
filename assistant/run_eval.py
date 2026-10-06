@@ -1,3 +1,4 @@
+import os
 import time
 import pandas as pd
 from google.genai import errors
@@ -5,6 +6,12 @@ from eval_set import EVAL_SET
 from query_generator import generate_sql
 from db_executor import run_query
 from sql_safety import validate_sql, UnsafeSQLError
+
+RESULTS_FILE = "eval_results.csv"
+
+
+class DailyQuotaExhausted(Exception):
+    pass
 
 
 def norm_cell(x):
@@ -36,8 +43,8 @@ def results_match(ref_df, got_df):
 
 
 def evaluate(item):
-    """Returns (status, detail, sql). status is PASS, FAIL, or ERROR.
-    ERROR = the model was unavailable, so the question could not be judged."""
+    """Returns (status, detail, sql). PASS/FAIL judge the assistant.
+    ERROR means the model was unavailable, so the question is not judged."""
     sql = ""
     try:
         sql = generate_sql(item["question"])
@@ -56,42 +63,60 @@ def evaluate(item):
         if results_match(ref, got):
             return "PASS", "", sql
         return "FAIL", "result differs from reference", sql
-    except errors.ServerError as e:
-        return "ERROR", f"model unavailable: {e.code}", sql
     except Exception as e:
-        return "FAIL", f"{type(e).__name__}: {e}", sql
+        msg = str(e)
+        if "RESOURCE_EXHAUSTED" in msg and "PerDay" in msg:
+            raise DailyQuotaExhausted()
+        if "RESOURCE_EXHAUSTED" in msg or "UNAVAILABLE" in msg or "503" in msg:
+            return "ERROR", f"model unavailable: {type(e).__name__}", sql
+        return "FAIL", f"{type(e).__name__}: {msg[:150]}", sql
 
 
+def save(results):
+    pd.DataFrame(results.values()).sort_values("id").to_csv(RESULTS_FILE, index=False)
+
+
+# Load earlier progress, keeping only questions that were genuinely judged.
 results = {}
-pending = list(EVAL_SET)
+if os.path.exists(RESULTS_FILE):
+    old = pd.read_csv(RESULTS_FILE).fillna("")
+    for r in old.to_dict("records"):
+        detail = str(r["detail"])
+        judged = r["status"] == "PASS" or (
+            r["status"] == "FAIL"
+            and "RESOURCE_EXHAUSTED" not in detail
+            and "UNAVAILABLE" not in detail
+        )
+        if judged:
+            results[int(r["id"])] = r
 
+stopped = False
 for pass_number in range(1, 4):
-    if not pending:
+    pending = [i for i in EVAL_SET if results.get(i["id"], {}).get("status") in (None, "ERROR")]
+    if not pending or stopped:
         break
     if pass_number > 1:
-        print(f"\n--- Pass {pass_number}: retrying {len(pending)} unanswered question(s) after a 60s pause ---")
+        print(f"\n--- Pass {pass_number}: retrying {len(pending)} question(s) after a 60s pause ---")
         time.sleep(60)
 
-    still_pending = []
     for item in pending:
-        status, detail, sql = evaluate(item)
+        try:
+            status, detail, sql = evaluate(item)
+        except DailyQuotaExhausted:
+            print("\nDaily free-tier quota used up. Progress is saved. "
+                  "Rerun tomorrow to finish the remaining questions.")
+            stopped = True
+            break
         print(f"[{status}] #{item['id']} {item['question']}  {detail}")
-        if status == "ERROR":
-            still_pending.append(item)
         results[item["id"]] = {"id": item["id"], "question": item["question"],
                                "status": status, "detail": detail, "generated_sql": sql}
-        time.sleep(8)  # stay under the free-tier rate limit
-    pending = still_pending
+        save(results)
+        time.sleep(8)
 
-df = pd.DataFrame(results.values()).sort_values("id")
-df.to_csv("eval_results.csv", index=False)
-
-answered = df[df["status"] != "ERROR"]
-passed = (answered["status"] == "PASS").sum()
-errors_left = (df["status"] == "ERROR").sum()
-
+judged = [r for r in results.values() if r["status"] in ("PASS", "FAIL")]
+passed = sum(r["status"] == "PASS" for r in judged)
 print("\n" + "=" * 50)
-print(f"Answered by the model: {len(answered)} of {len(df)}")
-print(f"Passed: {passed}/{len(answered)} = {100 * passed / max(len(answered), 1):.0f}%")
-if errors_left:
-    print(f"{errors_left} question(s) never got a response (Gemini busy). Rerun later to complete them.")
+print(f"Judged so far: {len(judged)} of {len(EVAL_SET)} questions")
+print(f"Passed: {passed}/{len(judged)} = {100 * passed / max(len(judged), 1):.0f}%")
+if len(judged) < len(EVAL_SET):
+    print(f"{len(EVAL_SET) - len(judged)} question(s) still to run. Rerun later.")
